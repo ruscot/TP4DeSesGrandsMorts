@@ -7,17 +7,23 @@ public class MyUnsortedList<E> implements UnsortedList<E> {
     private static class Link<E> {
         final E element;
         Link<E> next;
-
+        Link<E> previous;
         private Link(E element) {
             this.element = element;
         }
     }
 
     private Link<E> head;
+    //
+    private Link<E> end;
+    //
     private int size;
 
     private MyUnsortedList() {
         this.head = null;
+        //
+        this.end = null;
+        //
         this.size = 0;
     }
 
@@ -49,12 +55,34 @@ public class MyUnsortedList<E> implements UnsortedList<E> {
         size++;
         Link<E> newHead = new Link<>(element);
         newHead.next = head;
+        //
+        newHead.previous = null;
+        if(size != 1) {
+        	head.previous = newHead;
+        }
+        //
         head = newHead;
+        
+       
     }
 
     @Override
     public void append(E element) {
-        insert(element, size);
+        //insert(element, size);	
+    	if(size == 0) {
+    		prepend(element);
+    		this.end = this.head;
+    		return;
+    	}
+
+    	size++;
+    	Link<E> newEnd = new Link<>(element);
+    	newEnd.next = null;
+    	//
+    	newEnd.previous = end;
+    	//
+    	end.next = newEnd;
+    	end = newEnd;
     }
 
     @Override
@@ -66,6 +94,12 @@ public class MyUnsortedList<E> implements UnsortedList<E> {
             prepend(elem);
             return;
         }
+        
+        if(pos == size) {
+        	//ajout à la fin
+        	append(elem);
+        	return;
+        }
 
         Link<E> prevLink = head;
         while (pos-- > 1) {
@@ -75,6 +109,9 @@ public class MyUnsortedList<E> implements UnsortedList<E> {
         size++;
         Link<E> inserted = new Link<>(elem);
         Link<E> nextLink = prevLink.next;
+        //
+        inserted.previous = prevLink;
+        //
         prevLink.next = inserted;
         inserted.next = nextLink;
     }
@@ -88,13 +125,36 @@ public class MyUnsortedList<E> implements UnsortedList<E> {
         size--;
         Link<E> oldHead = head;
         head = oldHead.next;
+        //
+        if(head != null) {
+        	head.previous = null;
+        }
+        //
 
         return oldHead.element;
     }
 
     @Override
     public E popLast() {
-        return remove(size - 1);
+    	/**
+    	 * bug found with test test_popLast_list_empty()
+    	 * no exception throw
+    	 * */
+    	if (isEmpty()) {
+            throw new EmptyListException();
+        }
+    	
+    	if(size -1 == 0) {
+    		return pop();
+    	}
+    	
+    	size--;
+        
+        Link<E> removed = end;
+        end = removed.previous;
+        end.next = null;
+        
+        return removed.element;
     }
 
     @Override
@@ -105,15 +165,21 @@ public class MyUnsortedList<E> implements UnsortedList<E> {
         if (pos == 0) {
             return pop();
         }
-
+        if(pos == size-1) {
+        	return popLast();
+        }
         Link<E> prevLink = head;
         while (--pos > 0) {
             prevLink = prevLink.next;
         }
-
+        /**
+         * Bug found with test_remove_list_out_of_bound() and test_poplast_list_elementRemoved()
+         * */
+        size--;
+        
         Link<E> removed = prevLink.next;
         prevLink.next = removed.next;
-
+        
         return removed.element;
     }
 
